@@ -31,11 +31,28 @@ for (const [key, def] of Object.entries(context.Storm.schema)) {
 }
 const project = {
   title: "Thunder — A Living Storm",
-  description:
-    "A procedural cinematic thunderstorm with layered clouds, unpredictable lightning, optional rain, and a reduced flash setting. Click the sky to stir the storm; S opens settings. Fully offline.",
+  description: `Watch a dark, living storm unfold across your desktop. Layered clouds drift at different depths while unpredictable lightning flickers inside the cloud bank, breaks through gaps, or forms bright branching bolts in the foreground. Every event varies in timing, position, intensity, depth, pulse pattern, and bolt shape, so the storm never settles into an obvious loop.
+
+Features:
+• Procedural multi-layer storm clouds and slow atmospheric fog
+• Internal, middle-cloud, and foreground lightning
+• Irregular single strikes, double flashes, clusters, and long quiet periods
+• Optional Light, Medium, or Heavy rain (Off by default)
+• Click anywhere to stir the storm
+• Adjustable clouds, fog, lightning, rain, color, FPS, and quality
+• Reduced Flash Mode for softer, less frequent lightning
+• Fully offline with no external downloads, APIs, audio, or copyrighted assets
+
+Photosensitivity: contains intermittent lightning flashes. Reduced Flash Mode softens flashes and removes rapid multi-flash clusters. Lightning can also be disabled completely.
+
+For lower laptop power use: 30 FPS + Efficient cloud detail + Rain Off. Supports 16:9, 16:10, ultrawide, and other common resolutions.`,
   file: "index.html",
   general: { properties },
+  contentrating: "Everyone",
   preview: "preview.jpg",
+  ratingsex: "none",
+  ratingviolence: "none",
+  tags: ["Relaxing"],
   type: "web",
   version: 0,
 };

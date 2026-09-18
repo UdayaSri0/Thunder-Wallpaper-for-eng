@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Thunder — a living storm</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <main id="scene" aria-label="Procedural night thunderstorm">
+      <canvas id="clouds" aria-hidden="true"></canvas>
+      <canvas id="weather" aria-hidden="true"></canvas>
+    </main>
+    <button
+      id="settings-toggle"
+      aria-label="Open storm settings"
+      aria-controls="settings"
+      aria-expanded="false"
+      title="Storm settings (S)"
+    >
+      ☰
+    </button>
+    <aside id="settings" hidden aria-label="Storm settings">
+      <header>
+        <div>
+          <span class="eyebrow">A LIVING ATMOSPHERE</span>
+          <h1>Thunder<span>.</span></h1>
+        </div>
+        <button id="close" aria-label="Close settings">×</button>
+      </header>
+      <p class="intro">A quiet sky. An unpredictable storm.</p>
+      <div class="status">
+        <i></i><span id="renderer-status">PROCEDURAL ATMOSPHERE</span>
+      </div>
+      <div id="controls"></div>
+      <footer>
+        <button id="preview">Summon lightning</button
+        ><button id="reset">Reset</button>
+        <p>
+          Click the sky to stir the storm · S settings · Esc close<br />Lightning
+          includes bright flashes. Reduced Flash Mode softens them.
+        </p>
+      </footer>
+    </aside>
+    <script src="js/config.js"></script>
+    <script src="js/wallpaper-properties.js"></script>
+    <script src="js/clouds.js"></script>
+    <script src="js/lightning.js"></script>
+    <script src="js/weather.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

@@ -125,6 +125,24 @@ check(
     S.applySettings(defaults);
   },
 );
+check("The first event honors the selected frequency", () => {
+  for (const [mode, minimum, maximum] of [
+    ["veryrare", 20, 111],
+    ["rare", 4.2, 55.5],
+    ["normal", 1.75, 33.3],
+    ["frequent", 0.7, 14.8],
+    ["storm", 0.175, 7.4],
+  ]) {
+    S.settings.lightningfrequency = mode;
+    const l = new S.Lightning();
+    assert.ok(l.next >= minimum);
+    assert.ok(l.next <= maximum);
+  }
+  S.settings.reducedflash = true;
+  S.settings.lightningfrequency = "storm";
+  assert.ok(new S.Lightning().next >= 10);
+  S.applySettings(defaults);
+});
 check("500 bolts have unique, finite geometry and bounded branches", () => {
   const hashes = new Set();
   for (let i = 0; i < 500; i++) {

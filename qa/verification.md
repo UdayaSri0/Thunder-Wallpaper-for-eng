@@ -29,7 +29,7 @@
 - Simulated WebGL context loss and restoration without GL rendering errors.
 - Reduced-flash pulse structure.
 
-The browser's injected instrumentation emitted an unrelated MutationObserver message with no source URL while inspecting the iframe test page. The wallpaper has no MutationObserver code. Native Wallpaper Engine execution was not used for these measurements.
+The browser's injected instrumentation emitted an unrelated MutationObserver message with no source URL while inspecting the iframe test page. The wallpaper has no MutationObserver code. Browser timing measurements remained separate from the native Wallpaper Engine check.
 
 ## Visual checks
 
@@ -45,6 +45,6 @@ Captures are stored beside this file. The wallpaper thumbnail is a capture of th
 
 ## Compatibility scope
 
-The property format was checked against official Wallpaper Engine documentation and an installed first-party web wallpaper's `project.json`. The callback lifecycle was exercised using the documented API in a browser. This delivery does **not** claim a completed import/apply test inside Wallpaper Engine itself.
+The property format was checked against official Wallpaper Engine documentation and an installed first-party web wallpaper's `project.json`. The callback lifecycle was exercised using the documented API in a browser. The final project was then installed in Wallpaper Engine 2.8.42, opened in the native editor, confirmed to expose all 18 properties, applied to the desktop, and observed running through Wallpaper Engine's web wallpaper process.
 
 The browser's URL policy prevented automated navigation directly to `file://`, so visual tests used an optional loopback server limited to the project folder. Runtime files use classic scripts and relative paths without fetch, module loading, CDNs, or server APIs; opening `index.html` locally is the intended deployment path.
