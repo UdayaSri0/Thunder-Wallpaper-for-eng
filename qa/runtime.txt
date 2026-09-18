@@ -1,0 +1,13 @@
+PASS WebGL shader compiles
+PASS Live host properties, rain and quality cap
+PASS 30 FPS limit: 29.9 measured
+PASS 45 FPS limit: 45.0 measured
+PASS 60 FPS limit: 60.0 measured
+PASS Host FPS limit respected
+PASS Host pause stops frame production
+PASS Host resume restarts one animation loop
+PASS Zero animation speed freezes simulation
+PASS Context loss handled
+PASS Context restored without rendering errors
+PASS Reduced mode has one soft pulse per event
+COMPLETE

@@ -1,0 +1,232 @@
+{
+  "title": "Thunder — A Living Storm",
+  "description": "A procedural cinematic thunderstorm with layered clouds, unpredictable lightning, optional rain, and a reduced flash setting. Click the sky to stir the storm; S opens settings. Fully offline.",
+  "file": "index.html",
+  "general": {
+    "properties": {
+      "cloudspeed": {
+        "order": 0,
+        "text": "Cloud speed",
+        "type": "slider",
+        "value": 35,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "clouddensity": {
+        "order": 1,
+        "text": "Cloud density",
+        "type": "slider",
+        "value": 65,
+        "min": 10,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "cloudbrightness": {
+        "order": 2,
+        "text": "Cloud brightness",
+        "type": "slider",
+        "value": 55,
+        "min": 10,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "fogamount": {
+        "order": 3,
+        "text": "Foreground mist",
+        "type": "slider",
+        "value": 25,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "rainamount": {
+        "order": 4,
+        "text": "Rain",
+        "type": "combo",
+        "value": "0",
+        "options": [
+          {
+            "label": "Off",
+            "value": "0"
+          },
+          {
+            "label": "Light",
+            "value": "1"
+          },
+          {
+            "label": "Medium",
+            "value": "2"
+          },
+          {
+            "label": "Heavy",
+            "value": "3"
+          }
+        ]
+      },
+      "lightningenabled": {
+        "order": 5,
+        "text": "Lightning enabled",
+        "type": "bool",
+        "value": true
+      },
+      "lightningfrequency": {
+        "order": 6,
+        "text": "Frequency",
+        "type": "combo",
+        "value": "normal",
+        "options": [
+          {
+            "label": "Very rare",
+            "value": "veryrare"
+          },
+          {
+            "label": "Rare",
+            "value": "rare"
+          },
+          {
+            "label": "Normal",
+            "value": "normal"
+          },
+          {
+            "label": "Frequent",
+            "value": "frequent"
+          },
+          {
+            "label": "Storm",
+            "value": "storm"
+          }
+        ]
+      },
+      "lightningintensity": {
+        "order": 7,
+        "text": "Intensity",
+        "type": "slider",
+        "value": 75,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "visibleboltfrequency": {
+        "order": 8,
+        "text": "Foreground bolt weight",
+        "type": "slider",
+        "value": 20,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "cloudlightningfrequency": {
+        "order": 9,
+        "text": "Internal lightning weight",
+        "type": "slider",
+        "value": 55,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "middleboltfrequency": {
+        "order": 10,
+        "text": "Middle-cloud bolt weight",
+        "type": "slider",
+        "value": 25,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "lightningglow": {
+        "order": 11,
+        "text": "Glow strength",
+        "type": "slider",
+        "value": 65,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "lightningcolour": {
+        "order": 12,
+        "text": "Lightning colour",
+        "type": "color",
+        "value": "0.73 0.85 1"
+      },
+      "reducedflash": {
+        "order": 13,
+        "text": "Reduced Flash Mode",
+        "type": "bool",
+        "value": false
+      },
+      "animationfps": {
+        "order": 14,
+        "text": "Frame rate",
+        "type": "combo",
+        "value": "60",
+        "options": [
+          {
+            "label": "30 FPS",
+            "value": "30"
+          },
+          {
+            "label": "45 FPS",
+            "value": "45"
+          },
+          {
+            "label": "60 FPS",
+            "value": "60"
+          },
+          {
+            "label": "Unlimited",
+            "value": "0"
+          }
+        ]
+      },
+      "animationspeed": {
+        "order": 15,
+        "text": "Animation speed",
+        "type": "slider",
+        "value": 100,
+        "min": 0,
+        "max": 200,
+        "step": 1,
+        "fraction": false
+      },
+      "quality": {
+        "order": 16,
+        "text": "Cloud detail",
+        "type": "combo",
+        "value": "balanced",
+        "options": [
+          {
+            "label": "Efficient",
+            "value": "efficient"
+          },
+          {
+            "label": "Balanced",
+            "value": "balanced"
+          },
+          {
+            "label": "High",
+            "value": "high"
+          }
+        ]
+      },
+      "interactive": {
+        "order": 17,
+        "text": "Click to stir the storm",
+        "type": "bool",
+        "value": true
+      }
+    }
+  },
+  "preview": "preview.jpg",
+  "type": "web",
+  "version": 0
+}

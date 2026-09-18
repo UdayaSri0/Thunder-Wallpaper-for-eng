@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../" />
+    <title>Thunder visual QA</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #080d17;
+        overflow: hidden;
+      }
+      canvas {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="clouds"></canvas><canvas id="rain"></canvas>
+    <script src="js/config.js"></script>
+    <script src="js/clouds.js"></script>
+    <script src="js/lightning.js"></script>
+    <script src="js/weather.js"></script>
+    <script>
+      const query = new URLSearchParams(location.search);
+      let seed = 73914;
+      Math.random = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 4294967296;
+      };
+      if (query.has("fallback"))
+        HTMLCanvasElement.prototype.getContext = new Proxy(
+          HTMLCanvasElement.prototype.getContext,
+          {
+            apply(target, self, args) {
+              return args[0] === "webgl"
+                ? null
+                : Reflect.apply(target, self, args);
+            },
+          },
+        );
+      const clouds = new Storm.Clouds(document.getElementById("clouds")),
+        bolt = new Storm.Lightning(),
+        weather = new Storm.Weather(document.getElementById("rain"));
+      Storm.settings.rainamount = query.get("rain") || "0";
+      Storm.settings.reducedflash = query.has("reduced");
+      function render() {
+        clouds.resize(innerWidth, innerHeight);
+        bolt.resize(innerWidth, innerHeight);
+        weather.resize(innerWidth, innerHeight);
+        bolt.active.length = 0;
+        bolt.frameLights.length = 0;
+        if (query.has("depth")) {
+          const e = bolt.createEvent(Number(query.get("depth")), 0.57, 0.27);
+          e.power = Storm.settings.reducedflash ? 0.18 : 1;
+          e.visible = true;
+          bolt.frameLights.push(e);
+        }
+        bolt.draw(!!clouds.gl);
+        clouds.render(0, bolt.frameLights, bolt.canvas);
+        weather.render(0, bolt.frameLights);
+        document.body.dataset.renderer = clouds.mode;
+      }
+      addEventListener("resize", render);
+      render();
+    </script>
+  </body>
+</html>

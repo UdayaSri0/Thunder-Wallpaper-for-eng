@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Thunder runtime checks</title>
+    <style>
+      body {
+        margin: 0;
+        background: #09111d;
+        color: #d0deeb;
+        font: 14px monospace;
+      }
+      iframe {
+        width: 100vw;
+        height: 100vh;
+        border: 0;
+      }
+      pre {
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        padding: 20px;
+        max-width: 90%;
+        background: #07111beb;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe src="../index.html" title="Wallpaper under test"></iframe>
+    <pre id="results">Checking runtime…</pre>
+    <script>
+      const output = document.getElementById("results"),
+        frame = document.querySelector("iframe"),
+        lines = [];
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const check = (condition, message) => {
+        lines.push((condition ? "PASS " : "FAIL ") + message);
+        output.textContent = lines.join("\n");
+        if (!condition) throw new Error(message);
+      };
+      frame.onload = async () => {
+        try {
+          const w = frame.contentWindow,
+            S = w.Storm,
+            app = S.app,
+            host = w.wallpaperPropertyListener;
+          check(app.clouds.mode === "WebGL", "WebGL shader compiles");
+          host.applyUserProperties({
+            rainamount: { value: "3" },
+            quality: { value: "efficient" },
+          });
+          check(
+            S.settings.rainamount === "3" && app.clouds.canvas.width <= 850,
+            "Live host properties, rain and quality cap",
+          );
+          host.applyUserProperties({
+            rainamount: { value: "0" },
+            quality: { value: "balanced" },
+          });
+          for (const fps of [30, 45, 60]) {
+            host.applyUserProperties({ animationfps: { value: String(fps) } });
+            await wait(150);
+            const start = performance.now(),
+              frames = app.getStats().frames;
+            await wait(2000);
+            const observed =
+              (app.getStats().frames - frames) /
+              ((performance.now() - start) / 1000);
+            check(
+              observed > fps * 0.65 && observed < fps + 1.5,
+              `${fps} FPS limit: ${observed.toFixed(1)} measured`,
+            );
+          }
+          host.applyGeneralProperties({ fps: 30 });
+          check(app.getStats().fpsLimit === 30, "Host FPS limit respected");
+          host.applyGeneralProperties({ fps: 0 });
+          host.setPaused(true);
+          const before = app.getStats();
+          await wait(250);
+          check(
+            app.getStats().frames === before.frames,
+            "Host pause stops frame production",
+          );
+          host.setPaused(false);
+          await wait(200);
+          check(
+            app.getStats().frames > before.frames,
+            "Host resume restarts one animation loop",
+          );
+          host.applyUserProperties({ animationspeed: { value: 0 } });
+          const frozen = app.getStats().simulationTime;
+          await wait(200);
+          check(
+            app.getStats().simulationTime === frozen,
+            "Zero animation speed freezes simulation",
+          );
+          host.applyUserProperties({ animationspeed: { value: 100 } });
+          const ext = app.clouds.gl.getExtension("WEBGL_lose_context");
+          if (ext) {
+            ext.loseContext();
+            await wait(150);
+            check(app.clouds.lost, "Context loss handled");
+            ext.restoreContext();
+            await wait(600);
+            check(
+              !app.clouds.lost && app.clouds.gl.getError() === 0,
+              "Context restored without rendering errors",
+            );
+          }
+          host.applyUserProperties({ reducedflash: { value: true } });
+          app.lightning.wallTime += 20;
+          app.lightning.trigger();
+          check(
+            app.lightning.active.every((e) => e.pulses.length === 1),
+            "Reduced mode has one soft pulse per event",
+          );
+          lines.push("COMPLETE");
+          output.textContent = lines.join("\n");
+          document.body.dataset.result = "passed";
+        } catch (error) {
+          lines.push("ERROR " + error.message);
+          output.textContent = lines.join("\n");
+          document.body.dataset.result = "failed";
+        }
+      };
+    </script>
+  </body>
+</html>
