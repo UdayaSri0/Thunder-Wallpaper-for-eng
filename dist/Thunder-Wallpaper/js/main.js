@@ -3,6 +3,7 @@
   const S = Storm,
     clouds = new S.Clouds(document.getElementById("clouds")),
     lightning = new S.Lightning(),
+    thunder = new S.ThunderAudio(),
     weather = new S.Weather(document.getElementById("weather"));
   const panel = document.getElementById("settings"),
     toggle = document.getElementById("settings-toggle"),
@@ -44,7 +45,7 @@
       dt = (realDt * S.settings.animationspeed) / 100;
     const lights = lightning.update(dt, realDt);
     lightning.draw(!!clouds.gl);
-    clouds.render(dt, lights, lightning.canvas);
+    clouds.render(dt, lights, lightning.canvas, lightning.depthCanvas);
     weather.render(dt, lights);
     frames++;
     simulationTime += dt;
@@ -89,7 +90,7 @@
             .join("");
       else input.value = value;
       const output = document.getElementById(key + "-value");
-      if (output) output.value = value + "%";
+      if (output) output.value = value + (def.suffix || "%");
     }
   }
   for (const [key, def] of Object.entries(S.schema)) {
@@ -122,7 +123,7 @@
     if (def.type === "slider") {
       input.min = def.min;
       input.max = def.max;
-      input.step = 1;
+      input.step = def.step || 1;
       const output = document.createElement("output");
       output.id = key + "-value";
       label.append(output);
@@ -195,6 +196,10 @@
           "reducedflash",
           "lightningfrequency",
           "animationspeed",
+          "doublelightningenabled",
+          "doublelightninginterval",
+          "triplelightningenabled",
+          "triplelightninginterval",
         ].includes(k),
       )
     )
@@ -204,12 +209,13 @@
     clouds.mode === "WebGL" ? "PROCEDURAL ATMOSPHERE" : "CANVAS ATMOSPHERE";
   syncControls();
   resize();
-  clouds.render(0, [], lightning.canvas);
+  clouds.render(0, [], lightning.canvas, lightning.depthCanvas);
   resume();
   // Small diagnostics surface for local verification; no network or timers.
   S.app = {
     clouds,
     lightning,
+    thunder,
     weather,
     getStats: () => ({
       renderer: clouds.mode,

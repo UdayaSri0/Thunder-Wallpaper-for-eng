@@ -1,12 +1,12 @@
 {
   "title": "Thunder — A Living Storm",
-  "description": "Watch a dark, living storm unfold across your desktop. Layered clouds drift at different depths while unpredictable lightning flickers inside the cloud bank, breaks through gaps, or forms bright branching bolts in the foreground. Every event varies in timing, position, intensity, depth, pulse pattern, and bolt shape, so the storm never settles into an obvious loop.\n\nFeatures:\n• Procedural multi-layer storm clouds and slow atmospheric fog\n• Internal, middle-cloud, and foreground lightning\n• Irregular single strikes, double flashes, clusters, and long quiet periods\n• Optional Light, Medium, or Heavy rain (Off by default)\n• Click anywhere to stir the storm\n• Adjustable clouds, fog, lightning, rain, color, FPS, and quality\n• Reduced Flash Mode for softer, less frequent lightning\n• Fully offline with no external downloads, APIs, audio, or copyrighted assets\n\nPhotosensitivity: contains intermittent lightning flashes. Reduced Flash Mode softens flashes and removes rapid multi-flash clusters. Lightning can also be disabled completely.\n\nFor lower laptop power use: 30 FPS + Efficient cloud detail + Rain Off. Supports 16:9, 16:10, ultrawide, and other common resolutions.",
+  "description": "Watch a dark, living storm unfold across your desktop. Layered clouds drift and slowly evolve while travelling leaders form branching channels, trigger bright return strokes, and sometimes re-strike. Three independently configurable lightning colours illuminate nearby clouds with the colour of each active channel.\n\nFeatures:\n• Procedural multi-layer storm clouds, slow deformation, fog, and optional rain\n• Progressive leaders, delayed branches, return strokes, natural fades, and re-strikes\n• Internal, middle-cloud, foreground, cloud-to-cloud, and cloud-to-ground channels\n• Three configurable colours with simultaneous colour-aware cloud illumination\n• Common single strikes plus stochastic rare double and very rare triple events\n• Offline procedural thunder with volume, intensity, delay, and spatial controls\n• Click interaction, performance controls, and a safety-focused Reduced Flash Mode\n• Fully offline: no external downloads, APIs, audio files, or runtime dependencies\n\nPhotosensitivity: contains intermittent lightning flashes. Reduced Flash Mode caps brightness, removes rapid multi-strike events, restricts re-strikes, and enforces a 10-second safety interval. Lightning can also be disabled completely. Thunder audio is disabled by default.\n\nFor lower laptop power use: 30 FPS + Efficient cloud detail + Rain Off. Supports 16:9, 16:10, ultrawide, and other common resolutions.",
   "file": "index.html",
   "general": {
     "properties": {
       "cloudspeed": {
         "order": 0,
-        "text": "Cloud speed",
+        "text": "Cloud Speed",
         "type": "slider",
         "value": 35,
         "min": 0,
@@ -16,7 +16,7 @@
       },
       "clouddensity": {
         "order": 1,
-        "text": "Cloud density",
+        "text": "Cloud Density",
         "type": "slider",
         "value": 65,
         "min": 10,
@@ -26,7 +26,7 @@
       },
       "cloudbrightness": {
         "order": 2,
-        "text": "Cloud brightness",
+        "text": "Cloud Brightness",
         "type": "slider",
         "value": 55,
         "min": 10,
@@ -34,9 +34,39 @@
         "step": 1,
         "fraction": false
       },
-      "fogamount": {
+      "cloudcontrast": {
         "order": 3,
-        "text": "Foreground mist",
+        "text": "Cloud Contrast",
+        "type": "slider",
+        "value": 62,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "cloudturbulence": {
+        "order": 4,
+        "text": "Cloud Turbulence",
+        "type": "slider",
+        "value": 48,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "cloudsoftness": {
+        "order": 5,
+        "text": "Cloud Softness",
+        "type": "slider",
+        "value": 55,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "fogamount": {
+        "order": 6,
+        "text": "Foreground Mist",
         "type": "slider",
         "value": 25,
         "min": 0,
@@ -45,7 +75,7 @@
         "fraction": false
       },
       "rainamount": {
-        "order": 4,
+        "order": 7,
         "text": "Rain",
         "type": "combo",
         "value": "0",
@@ -69,13 +99,13 @@
         ]
       },
       "lightningenabled": {
-        "order": 5,
-        "text": "Lightning enabled",
+        "order": 8,
+        "text": "Lightning Enabled",
         "type": "bool",
         "value": true
       },
       "lightningfrequency": {
-        "order": 6,
+        "order": 9,
         "text": "Frequency",
         "type": "combo",
         "value": "normal",
@@ -103,7 +133,7 @@
         ]
       },
       "lightningintensity": {
-        "order": 7,
+        "order": 10,
         "text": "Intensity",
         "type": "slider",
         "value": 75,
@@ -112,19 +142,19 @@
         "step": 1,
         "fraction": false
       },
-      "visibleboltfrequency": {
-        "order": 8,
-        "text": "Foreground bolt weight",
+      "lightningglow": {
+        "order": 11,
+        "text": "Glow Strength",
         "type": "slider",
-        "value": 20,
+        "value": 65,
         "min": 0,
         "max": 100,
         "step": 1,
         "fraction": false
       },
       "cloudlightningfrequency": {
-        "order": 9,
-        "text": "Internal lightning weight",
+        "order": 12,
+        "text": "Internal Lightning Weight",
         "type": "slider",
         "value": 55,
         "min": 0,
@@ -133,8 +163,8 @@
         "fraction": false
       },
       "middleboltfrequency": {
-        "order": 10,
-        "text": "Middle-cloud bolt weight",
+        "order": 13,
+        "text": "Middle-Cloud Bolt Weight",
         "type": "slider",
         "value": 25,
         "min": 0,
@@ -142,9 +172,161 @@
         "step": 1,
         "fraction": false
       },
-      "lightningglow": {
-        "order": 11,
-        "text": "Glow strength",
+      "visibleboltfrequency": {
+        "order": 14,
+        "text": "Foreground Bolt Weight",
+        "type": "slider",
+        "value": 20,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "lightningtravelspeed": {
+        "order": 15,
+        "text": "Lightning Travel Speed",
+        "type": "slider",
+        "value": 100,
+        "min": 50,
+        "max": 200,
+        "step": 1,
+        "fraction": false
+      },
+      "lightningfadespeed": {
+        "order": 16,
+        "text": "Lightning Fade Speed",
+        "type": "slider",
+        "value": 100,
+        "min": 50,
+        "max": 200,
+        "step": 1,
+        "fraction": false
+      },
+      "restrikechance": {
+        "order": 17,
+        "text": "Re-strike Chance",
+        "type": "slider",
+        "value": 35,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "maxrestrikes": {
+        "order": 18,
+        "text": "Maximum Re-strikes",
+        "type": "combo",
+        "value": "2",
+        "options": [
+          {
+            "label": "0",
+            "value": "0"
+          },
+          {
+            "label": "1",
+            "value": "1"
+          },
+          {
+            "label": "2",
+            "value": "2"
+          },
+          {
+            "label": "3",
+            "value": "3"
+          }
+        ]
+      },
+      "lightningcolour1enabled": {
+        "order": 19,
+        "text": "Colour 1 Enabled",
+        "type": "bool",
+        "value": true
+      },
+      "lightningcolour1": {
+        "order": 20,
+        "text": "Lightning Colour 1",
+        "type": "color",
+        "value": "0.72 0.86 1"
+      },
+      "lightningcolour2enabled": {
+        "order": 21,
+        "text": "Colour 2 Enabled",
+        "type": "bool",
+        "value": true
+      },
+      "lightningcolour2": {
+        "order": 22,
+        "text": "Lightning Colour 2",
+        "type": "color",
+        "value": "1 0.93 0.82"
+      },
+      "lightningcolour3enabled": {
+        "order": 23,
+        "text": "Colour 3 Enabled",
+        "type": "bool",
+        "value": true
+      },
+      "lightningcolour3": {
+        "order": 24,
+        "text": "Lightning Colour 3",
+        "type": "color",
+        "value": "0.69 0.60 1"
+      },
+      "doublelightningenabled": {
+        "order": 25,
+        "text": "Double Lightning Enabled",
+        "type": "bool",
+        "value": true
+      },
+      "doublelightninginterval": {
+        "order": 26,
+        "text": "Average Double-Strike Gap",
+        "type": "slider",
+        "value": 150,
+        "min": 20,
+        "max": 900,
+        "step": 1,
+        "fraction": false
+      },
+      "triplelightningenabled": {
+        "order": 27,
+        "text": "Triple Lightning Enabled",
+        "type": "bool",
+        "value": true
+      },
+      "triplelightninginterval": {
+        "order": 28,
+        "text": "Average Triple-Strike Gap",
+        "type": "slider",
+        "value": 420,
+        "min": 30,
+        "max": 1800,
+        "step": 1,
+        "fraction": false
+      },
+      "multistrikemingap": {
+        "order": 29,
+        "text": "Multi-Strike Minimum Gap",
+        "type": "slider",
+        "value": 80,
+        "min": 50,
+        "max": 3000,
+        "step": 1,
+        "fraction": false
+      },
+      "multistrikemaxgap": {
+        "order": 30,
+        "text": "Multi-Strike Maximum Gap",
+        "type": "slider",
+        "value": 1400,
+        "min": 50,
+        "max": 3000,
+        "step": 1,
+        "fraction": false
+      },
+      "multistrikespread": {
+        "order": 31,
+        "text": "Multi-Strike Spread",
         "type": "slider",
         "value": 65,
         "min": 0,
@@ -152,21 +334,67 @@
         "step": 1,
         "fraction": false
       },
-      "lightningcolour": {
-        "order": 12,
-        "text": "Lightning colour",
-        "type": "color",
-        "value": "0.73 0.85 1"
+      "thunderaudioenabled": {
+        "order": 32,
+        "text": "Thunder Audio",
+        "type": "bool",
+        "value": false
+      },
+      "thundervolume": {
+        "order": 33,
+        "text": "Thunder Volume",
+        "type": "slider",
+        "value": 40,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "thunderintensity": {
+        "order": 34,
+        "text": "Thunder Intensity",
+        "type": "slider",
+        "value": 60,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "fraction": false
+      },
+      "thundermindelay": {
+        "order": 35,
+        "text": "Minimum Thunder Delay",
+        "type": "slider",
+        "value": 0.25,
+        "min": 0,
+        "max": 10,
+        "step": 0.05,
+        "fraction": true
+      },
+      "thundermaxdelay": {
+        "order": 36,
+        "text": "Maximum Thunder Delay",
+        "type": "slider",
+        "value": 6,
+        "min": 0,
+        "max": 10,
+        "step": 0.05,
+        "fraction": true
+      },
+      "spatialthunder": {
+        "order": 37,
+        "text": "Spatial Thunder",
+        "type": "bool",
+        "value": true
       },
       "reducedflash": {
-        "order": 13,
+        "order": 38,
         "text": "Reduced Flash Mode",
         "type": "bool",
         "value": false
       },
       "animationfps": {
-        "order": 14,
-        "text": "Frame rate",
+        "order": 39,
+        "text": "Frame Rate",
         "type": "combo",
         "value": "60",
         "options": [
@@ -189,8 +417,8 @@
         ]
       },
       "animationspeed": {
-        "order": 15,
-        "text": "Animation speed",
+        "order": 40,
+        "text": "Animation Speed",
         "type": "slider",
         "value": 100,
         "min": 0,
@@ -199,8 +427,8 @@
         "fraction": false
       },
       "quality": {
-        "order": 16,
-        "text": "Cloud detail",
+        "order": 41,
+        "text": "Cloud Detail",
         "type": "combo",
         "value": "balanced",
         "options": [
@@ -219,8 +447,8 @@
         ]
       },
       "interactive": {
-        "order": 17,
-        "text": "Click to stir the storm",
+        "order": 42,
+        "text": "Click to Stir the Storm",
         "type": "bool",
         "value": true
       }

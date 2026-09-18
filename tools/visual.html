@@ -47,24 +47,63 @@
       const clouds = new Storm.Clouds(document.getElementById("clouds")),
         bolt = new Storm.Lightning(),
         weather = new Storm.Weather(document.getElementById("rain"));
+      document.body.insertBefore(bolt.canvas, document.getElementById("rain"));
       Storm.settings.rainamount = query.get("rain") || "0";
       Storm.settings.reducedflash = query.has("reduced");
+      const mode = query.get("mode") || (query.has("depth") ? `depth${query.get("depth")}` : "calm");
+      const settings = {
+        "cloud-contrast-low": { cloudcontrast: 10 },
+        "cloud-contrast-high": { cloudcontrast: 95 },
+        "cloud-turbulence-low": { cloudturbulence: 5 },
+        "cloud-turbulence-high": { cloudturbulence: 95 },
+        "cloud-softness-low": { cloudsoftness: 5 },
+        "cloud-softness-high": { cloudsoftness: 95 },
+      }[mode];
+      if (settings) Object.assign(Storm.settings, settings);
+
+      function pose(event, phase) {
+        event.visible = true;
+        if (phase === "leader") event.age = event.leaderDuration * 0.58;
+        else if (phase === "return") event.age = event.returnStart + event.returnDuration * 0.62;
+        else if (phase === "restrike") {
+          event.restrikes = [{ start: event.returnEnd + 0.1, end: event.returnEnd + 0.18, intensity: 0.84 }];
+          event.restrikeCount = 1;
+          event.age = event.returnEnd + 0.14;
+          event.duration = event.age + 0.8;
+        } else event.age = event.returnStart + event.returnDuration * 0.7;
+        bolt.updateState(event, Math.max(0, event.age - 0.01));
+        bolt.frameLights.push(event);
+      }
+
       function render() {
         clouds.resize(innerWidth, innerHeight);
         bolt.resize(innerWidth, innerHeight);
         weather.resize(innerWidth, innerHeight);
         bolt.active.length = 0;
         bolt.frameLights.length = 0;
-        if (query.has("depth")) {
-          const e = bolt.createEvent(Number(query.get("depth")), 0.57, 0.27);
-          e.power = Storm.settings.reducedflash ? 0.18 : 1;
-          e.visible = true;
-          bolt.frameLights.push(e);
+        if (mode.startsWith("colour")) {
+          const slot = Number(mode.slice(-1));
+          const e = bolt.createStrike(bolt.makeStrikeSpec({ depth: 2, x: 0.57, y: 0.16, colour: Storm.colour(slot), colourSlot: slot }));
+          pose(e, "return");
+        } else if (mode === "double" || mode === "triple") {
+          const plan = bolt.planMultiEvent(mode);
+          for (const spec of plan.strikes) {
+            spec.depth = 2;
+            pose(bolt.createStrike(spec), spec.strikeIndex ? "leader" : "return");
+          }
+        } else if (["leader", "return", "restrike"].includes(mode)) {
+          pose(bolt.createStrike(bolt.makeStrikeSpec({ depth: 2, x: 0.56, y: 0.12 })), mode);
+        } else if (mode.endsWith("-travel")) {
+          const depth = { "internal-travel": 0, "middle-travel": 1, "foreground-travel": 2 }[mode];
+          pose(bolt.createStrike(bolt.makeStrikeSpec({ depth, x: 0.48, y: 0.2 })), "leader");
+        } else if (mode.startsWith("depth")) {
+          pose(bolt.createStrike(bolt.makeStrikeSpec({ depth: Number(mode.slice(-1)), x: 0.57, y: 0.27 })), "return");
         }
         bolt.draw(!!clouds.gl);
-        clouds.render(0, bolt.frameLights, bolt.canvas);
+        clouds.render(0, bolt.frameLights, bolt.canvas, bolt.depthCanvas);
         weather.render(0, bolt.frameLights);
         document.body.dataset.renderer = clouds.mode;
+        document.body.dataset.mode = mode;
       }
       addEventListener("resize", render);
       render();

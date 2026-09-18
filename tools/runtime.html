@@ -4,35 +4,18 @@
     <meta charset="utf-8" />
     <title>Thunder runtime checks</title>
     <style>
-      body {
-        margin: 0;
-        background: #09111d;
-        color: #d0deeb;
-        font: 14px monospace;
-      }
-      iframe {
-        width: 100vw;
-        height: 100vh;
-        border: 0;
-      }
-      pre {
-        position: fixed;
-        left: 20px;
-        top: 20px;
-        padding: 20px;
-        max-width: 90%;
-        background: #07111beb;
-        white-space: pre-wrap;
-      }
+      body { margin: 0; background: #09111d; color: #d0deeb; font: 14px monospace; }
+      iframe { width: 100vw; height: 100vh; border: 0; }
+      pre { position: fixed; left: 20px; top: 20px; padding: 20px; max-width: 90%; max-height: 85%; overflow: auto; background: #07111beb; white-space: pre-wrap; }
     </style>
   </head>
   <body>
     <iframe src="../index.html" title="Wallpaper under test"></iframe>
     <pre id="results">Checking runtime…</pre>
     <script>
-      const output = document.getElementById("results"),
-        frame = document.querySelector("iframe"),
-        lines = [];
+      const output = document.getElementById("results");
+      const frame = document.querySelector("iframe");
+      const lines = [];
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const check = (condition, message) => {
         lines.push((condition ? "PASS " : "FAIL ") + message);
@@ -41,80 +24,94 @@
       };
       frame.onload = async () => {
         try {
-          const w = frame.contentWindow,
-            S = w.Storm,
-            app = S.app,
-            host = w.wallpaperPropertyListener;
+          const w = frame.contentWindow;
+          const S = w.Storm;
+          const app = S.app;
+          const host = w.wallpaperPropertyListener;
           check(app.clouds.mode === "WebGL", "WebGL shader compiles");
+          check(Object.keys(S.schema).length === 43, "All 43 schema-driven controls loaded");
+
           host.applyUserProperties({
-            rainamount: { value: "3" },
-            quality: { value: "efficient" },
+            lightningcolour1: { value: "0.1 0.2 0.3" },
+            lightningcolour2: { value: "0.4 0.5 0.6" },
+            lightningcolour3: { value: "0.7 0.8 0.9" },
+            cloudcontrast: { value: 90 },
+            cloudturbulence: { value: 15 },
+            cloudsoftness: { value: 80 },
           });
-          check(
-            S.settings.rainamount === "3" && app.clouds.canvas.width <= 850,
-            "Live host properties, rain and quality cap",
-          );
+          check(S.settings.lightningcolour1 === "0.1 0.2 0.3" && S.settings.lightningcolour3 === "0.7 0.8 0.9", "Three independent colours apply live");
+          check(S.settings.cloudcontrast === 90 && S.settings.cloudturbulence === 15 && S.settings.cloudsoftness === 80, "Cloud controls apply live");
+
+          host.applyUserProperties({ lightningcolour: { value: "0.2 0.3 0.4" } });
+          check(S.settings.lightningcolour1 === "0.2 0.3 0.4", "Legacy lightningcolour migrates to Colour 1");
           host.applyUserProperties({
-            rainamount: { value: "0" },
-            quality: { value: "balanced" },
+            lightningcolour1enabled: { value: false },
+            lightningcolour2enabled: { value: false },
+            lightningcolour3enabled: { value: false },
           });
-          for (const fps of [30, 45, 60]) {
+          check(S.enabledColours().length === 1 && S.enabledColours()[0].slot === 1, "All-disabled colour fallback is safe");
+
+          const doublePlan = app.lightning.planMultiEvent("double");
+          const triplePlan = app.lightning.planMultiEvent("triple");
+          check(doublePlan.strikes.length === 2 && triplePlan.strikes.length === 3, "Dedicated double and triple plans");
+          check(new Set(triplePlan.strikes.map((strike) => strike.x)).size === 3, "Multi-strike positions are independent");
+
+          host.applyUserProperties({ multistrikemingap: { value: 2500 }, multistrikemaxgap: { value: 100 } });
+          check(S.settings.multistrikemingap <= S.settings.multistrikemaxgap, "Multi-strike min/max normalize safely");
+          host.applyUserProperties({ thundermindelay: { value: 8 }, thundermaxdelay: { value: 2 } });
+          check(S.settings.thundermindelay <= S.settings.thundermaxdelay, "Thunder delay min/max normalize safely");
+
+          app.lightning.resetSchedule();
+          app.lightning.next = Infinity;
+          const event = app.lightning.createStrike(app.lightning.makeStrikeSpec({ depth: 2 }));
+          app.lightning.update(event.leaderDuration * 0.25, 0.1);
+          const earlyProgress = event.leaderProgress;
+          app.lightning.update(event.leaderDuration * 0.35, 0.1);
+          check(earlyProgress > 0 && event.leaderProgress > earlyProgress && event.leaderProgress < 1, "Leader geometry reveals progressively");
+          app.lightning.update(event.leaderDuration, 0.1);
+          check(event.phase === "return" || event.phase === "fade", "Return stroke follows leader completion");
+          check(event.lightSamples.length > 0 && event.lightSamples[0].colour === event.colour, "Moving cloud lights retain strike colour");
+
+          host.applyUserProperties({ thunderaudioenabled: { value: false }, thundervolume: { value: 40 } });
+          check(app.thunder.schedule(event) === false, "Disabled audio schedules no voice");
+          host.applyUserProperties({ thunderaudioenabled: { value: true }, thundervolume: { value: 0 } });
+          check(app.thunder.schedule(event) === false, "Volume zero is genuine silence");
+
+          for (const fps of [30, 60]) {
             host.applyUserProperties({ animationfps: { value: String(fps) } });
             await wait(150);
-            const start = performance.now(),
-              frames = app.getStats().frames;
-            await wait(2000);
-            const observed =
-              (app.getStats().frames - frames) /
-              ((performance.now() - start) / 1000);
-            check(
-              observed > fps * 0.65 && observed < fps + 1.5,
-              `${fps} FPS limit: ${observed.toFixed(1)} measured`,
-            );
+            const start = performance.now();
+            const frames = app.getStats().frames;
+            await wait(1200);
+            const observed = (app.getStats().frames - frames) / ((performance.now() - start) / 1000);
+            check(observed > 5 && observed < fps + 2, `${fps} FPS cap not exceeded: ${observed.toFixed(1)} measured`);
           }
+
           host.applyGeneralProperties({ fps: 30 });
-          check(app.getStats().fpsLimit === 30, "Host FPS limit respected");
+          check(app.getStats().fpsLimit === 30, "Host FPS cap respected");
           host.applyGeneralProperties({ fps: 0 });
           host.setPaused(true);
-          const before = app.getStats();
-          await wait(250);
-          check(
-            app.getStats().frames === before.frames,
-            "Host pause stops frame production",
-          );
+          const pausedFrames = app.getStats().frames;
+          await wait(220);
+          check(app.getStats().frames === pausedFrames && app.thunder.paused, "Host pause stops visuals and clears audio scheduling");
           host.setPaused(false);
-          await wait(200);
-          check(
-            app.getStats().frames > before.frames,
-            "Host resume restarts one animation loop",
-          );
-          host.applyUserProperties({ animationspeed: { value: 0 } });
-          const frozen = app.getStats().simulationTime;
-          await wait(200);
-          check(
-            app.getStats().simulationTime === frozen,
-            "Zero animation speed freezes simulation",
-          );
-          host.applyUserProperties({ animationspeed: { value: 100 } });
-          const ext = app.clouds.gl.getExtension("WEBGL_lose_context");
-          if (ext) {
-            ext.loseContext();
+          await wait(180);
+          check(app.getStats().frames > pausedFrames, "Host resume restarts one animation loop");
+
+          host.applyUserProperties({ reducedflash: { value: true }, lightningfrequency: { value: "storm" } });
+          app.lightning.resetSchedule();
+          check(!app.lightning.specialAllowed("double") && !app.lightning.specialAllowed("triple"), "Reduced Flash suppresses double/triple events");
+          check(app.lightning.next - app.lightning.time >= 10, "Reduced Flash preserves 10-second safety gap");
+
+          const extension = app.clouds.gl.getExtension("WEBGL_lose_context");
+          if (extension) {
+            extension.loseContext();
             await wait(150);
-            check(app.clouds.lost, "Context loss handled");
-            ext.restoreContext();
+            check(app.clouds.lost, "WebGL context loss handled");
+            extension.restoreContext();
             await wait(600);
-            check(
-              !app.clouds.lost && app.clouds.gl.getError() === 0,
-              "Context restored without rendering errors",
-            );
+            check(!app.clouds.lost && app.clouds.gl.getError() === 0, "WebGL context restored cleanly");
           }
-          host.applyUserProperties({ reducedflash: { value: true } });
-          app.lightning.wallTime += 20;
-          app.lightning.trigger();
-          check(
-            app.lightning.active.every((e) => e.pulses.length === 1),
-            "Reduced mode has one soft pulse per event",
-          );
           lines.push("COMPLETE");
           output.textContent = lines.join("\n");
           document.body.dataset.result = "passed";

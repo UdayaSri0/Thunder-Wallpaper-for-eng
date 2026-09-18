@@ -4,47 +4,69 @@
   const fragment = `
   precision highp float;
   varying vec2 uv;
-  uniform sampler2D noiseMap, bolts;
+  uniform sampler2D noiseMap, boltColour, boltDepth;
   uniform vec2 resolution, drift;
-  uniform float density, brightness, fog, glow, reduced, hasBolt;
-  uniform vec3 lightningColor;
-  uniform vec4 lights[4];
+  uniform float density, brightness, fog, glow, reduced, contrast, turbulence, softness, evolution, hasBolt;
+  uniform vec4 lights[8];
+  uniform vec3 lightColours[8];
   float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return texture2D(noiseMap,(i+f+.5)/256.).r;}
   float fbm(vec2 p){float f=0.;float a=.53;for(int i=0;i<5;i++){f+=a*noise(p);p=mat2(1.63,1.17,-1.17,1.63)*p+17.3;a*=.49;}return f;}
-  float field(vec2 p){vec2 w=vec2(noise(p*.7),noise(p*.7+49.));return fbm(p+w*.58);}
+  float field(vec2 p,float layer){
+    vec2 slow=vec2(sin(evolution*.17+layer)*.24,cos(evolution*.13+layer)*.19);
+    vec2 w=vec2(noise(p*.62+slow),noise(p*.62+49.+slow.yx));
+    float broad=fbm(p*.58+w*.24+slow);
+    float detail=fbm(p+w*mix(.18,.88,turbulence)+slow*.45);
+    return mix(broad,detail,mix(.28,.78,turbulence));
+  }
   void main(){
     vec2 st=vec2(uv.x,1.-uv.y);
     float aspect=resolution.x/resolution.y;
     vec2 p=vec2(st.x*aspect,st.y);
     vec2 d=drift;
-    float far=field(p*3.1+vec2(d.x*.38,-d.x*.07)+11.);
-    float main=field(p*3.5+vec2(-d.x*.65,d.x*.11)+42.);
-    float near=field(p*2.8+vec2(d.x*.92,d.x*.06)+91.);
-    float bank=1.-smoothstep(.53,.94,st.y);
-    float a=smoothstep(.25,.65,far+density*.13)*.85;
-    float b=smoothstep(.29,.63,main+density*.19+bank*.055)*.96;
-    float c=smoothstep(.43,.76,near+density*.12)*(.22+bank*.5);
-    float shade=field(p*3.5+vec2(-d.x*.65,d.x*.11)+42.+vec2(-.32,-.46));
-    float rim=clamp((main-shade)*2.2+.06,0.,1.);
+    float far=field(p*2.55+vec2(d.x*.38,-d.x*.07)+11.,1.);
+    float mid=field(p*3.25+vec2(-d.x*.65,d.x*.11)+42.,2.);
+    float near=field(p*2.35+vec2(d.x*.92,d.x*.06)+91.,3.);
+    float towers=field(vec2(p.x*1.05,p.y*.58)+vec2(-d.x*.16,166.),4.);
+    mid=mix(mid,mid*.7+towers*.42,.52);
+    float bank=1.-smoothstep(.48,.96,st.y);
+    float edge=mix(.035,.145,softness);
+    float farShape=(far-.5)*mix(.72,1.55,contrast)+.5+density*.12;
+    float midShape=(mid-.5)*mix(.72,1.62,contrast)+.5+density*.18+bank*.065;
+    float nearShape=(near-.5)*mix(.7,1.5,contrast)+.5+density*.11;
+    float a=smoothstep(.46-edge,.46+edge,farShape)*.86;
+    float b=smoothstep(.49-edge,.49+edge,midShape)*.97;
+    float c=smoothstep(.57-edge,.57+edge,nearShape)*(.2+bank*.54);
+    float shade=field(p*3.25+vec2(-d.x*.65,d.x*.11)+41.6,2.);
+    float rim=clamp((mid-shade)*mix(1.4,3.1,contrast)+.04,0.,1.);
+    float lowerDark=mix(1.,.63,smoothstep(.35,.9,st.y)*b*contrast);
     vec3 sky=mix(vec3(.038,.060,.095),vec3(.075,.113,.166),smoothstep(.2,1.,st.y));
     vec3 col=mix(sky,vec3(.092,.119,.157)*( .68+far*.55),a);
-    vec3 cloud=vec3(.035,.048,.069)+vec3(.25,.282,.325)*rim+main*.048;
+    vec3 cloud=(vec3(.035,.048,.069)+vec3(.25,.282,.325)*rim+mid*.048)*lowerDark;
     col=mix(col,cloud,b);
     col=mix(col,vec3(.034,.046,.065)+near*.046,c);
     col*=.5+brightness*1.12;
     vec3 light=vec3(0.);
-    for(int i=0;i<4;i++){
+    for(int i=0;i<8;i++){
       vec4 l=lights[i];
       vec2 delta=(st-l.xy)*vec2(aspect,1.);
       float dist=length(delta*vec2(.86,1.18));
       float spread=exp(-dist*dist/(.019+glow*.066));
-      float filaments=.22+main*.95+rim*1.4;
+      float filaments=.22+mid*.95+rim*1.4;
       float transmission=mix(.38,1.,1.-c);
-      light+=lightningColor*l.z*(spread*filaments*transmission*(.5+glow)+.012*(1.-reduced*.9));
+      light+=lightColours[i]*l.z*(spread*filaments*transmission*(.5+glow)+.009*(1.-reduced*.92));
     }
     col+=light;
-    if(hasBolt>.5){vec3 bolt=texture2D(bolts,st).rgb;float internal=pow(1.-b,4.)*.24;float middle=pow(1.-c,2.)*(1.-b*.83);float energy=bolt.r*internal+bolt.g*middle+bolt.b;col+=mix(lightningColor,vec3(1.),smoothstep(.5,1.,energy)*.55)*energy*2.6;}
-    float mist=fbm(p*2.+vec2(d.x*.24,117.));
+    if(hasBolt>.5){
+      vec3 channel=texture2D(boltColour,st).rgb;
+      vec3 depthMask=texture2D(boltDepth,st).rgb;
+      float internal=depthMask.r*pow(1.-b,4.)*.26;
+      float middle=depthMask.g*pow(1.-c,2.)*(1.-b*.82);
+      float foreground=depthMask.b;
+      float channelEnergy=max(max(channel.r,channel.g),channel.b);
+      float maskEnergy=max(max(depthMask.r,depthMask.g),depthMask.b)+.0001;
+      col+=channel*((internal+middle+foreground)/maskEnergy)*mix(1.7,2.7,smoothstep(.1,.8,channelEnergy));
+    }
+    float mist=fbm(p*2.+vec2(d.x*.24,117.+evolution*.01));
     float haze=fog*smoothstep(.4,1.,st.y)*(.12+mist*.34);
     col=mix(col,vec3(.13,.175,.225)+light*.16,haze);
     float vignette=1.-.33*pow(length((st-.5)*vec2(1.,.75)),1.35);
@@ -139,9 +161,13 @@
         "fog",
         "glow",
         "reduced",
-        "lightningColor",
+        "contrast",
+        "turbulence",
+        "softness",
+        "evolution",
         "hasBolt",
         "lights[0]",
+        "lightColours[0]",
       ])
         this.uniforms[name] = gl.getUniformLocation(program, name);
       const noise = new Uint8Array(256 * 256 * 4);
@@ -167,26 +193,23 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
       gl.uniform1i(gl.getUniformLocation(program, "noiseMap"), 0);
-      this.boltTexture = gl.createTexture();
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, this.boltTexture);
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA,
-        1,
-        1,
-        0,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
-        new Uint8Array(4),
-      );
+      this.boltColourTexture = this.makeCanvasTexture(1, "boltColour");
+      this.boltDepthTexture = this.makeCanvasTexture(2, "boltDepth");
+      this.lightData = new Float32Array(32);
+      this.lightColourData = new Float32Array(24);
+    }
+    makeCanvasTexture(unit, uniformName) {
+      const gl = this.gl;
+      const texture = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0 + unit);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.uniform1i(gl.getUniformLocation(program, "bolts"), 1);
-      this.lightData = new Float32Array(16);
+      gl.uniform1i(gl.getUniformLocation(this.program, uniformName), unit);
+      return texture;
     }
     resize(w, h) {
       const cap = { efficient: 850, balanced: 1250, high: 1800 }[
@@ -198,11 +221,11 @@
       if (this.gl)
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
-    render(dt, events, boltCanvas) {
+    render(dt, events, boltCanvas, depthCanvas) {
       this.time += ((dt * S.settings.cloudspeed) / 100) * 0.022;
       if (this.lost) return;
       if (!this.gl) {
-        this.renderFallback(events, boltCanvas);
+        this.renderFallback(events);
         return;
       }
       const gl = this.gl,
@@ -217,29 +240,31 @@
         fog: c.fogamount / 100,
         glow: c.lightningglow / 100,
         reduced: c.reducedflash ? 1 : 0,
-        hasBolt: events.length ? 1 : 0,
+        contrast: c.cloudcontrast / 100,
+        turbulence: c.cloudturbulence / 100,
+        softness: c.cloudsoftness / 100,
+        evolution: this.time,
+        hasBolt: events.length && boltCanvas && depthCanvas ? 1 : 0,
       }))
         gl.uniform1f(u[name], value);
-      gl.uniform3fv(u.lightningColor, S.color());
       this.lightData.fill(0);
-      events
-        .slice(0, 4)
-        .forEach((e, i) =>
-          this.lightData.set([e.x, e.y, e.power, e.depth], i * 4),
-        );
+      this.lightColourData.fill(0);
+      const candidates = [];
+      for (const event of events) for (const sample of event.lightSamples || []) candidates.push(sample);
+      candidates.sort((a, b) => b.power - a.power).slice(0, 8).forEach((sample, index) => {
+        this.lightData.set([sample.x, sample.y, sample.power, sample.depth], index * 4);
+        this.lightColourData.set(sample.colour, index * 3);
+      });
       gl.uniform4fv(u["lights[0]"], this.lightData);
-      if (events.length) {
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, this.boltTexture);
+      gl.uniform3fv(u["lightColours[0]"], this.lightColourData);
+      if (events.length && boltCanvas && depthCanvas) {
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-        gl.texImage2D(
-          gl.TEXTURE_2D,
-          0,
-          gl.RGBA,
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
-          boltCanvas,
-        );
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.boltColourTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, boltCanvas);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, this.boltDepthTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, depthCanvas);
       }
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
@@ -294,7 +319,7 @@
         this.sprites.push(c);
       }
     }
-    renderFallback(events, bolts) {
+    renderFallback(events) {
       const ctx = this.ctx,
         w = this.canvas.width,
         h = this.canvas.height,
@@ -323,16 +348,16 @@
         }
         for (const e of events) {
           ctx.globalCompositeOperation = "screen";
-          const gx = e.x * w,
-            gy = e.y * h,
-            g = ctx.createRadialGradient(gx, gy, 0, gx, gy, w * 0.32);
-          g.addColorStop(
-            0,
-            `rgba(155,193,235,${Math.min(0.6, e.power * 0.42)})`,
-          );
-          g.addColorStop(1, "rgba(90,130,180,0)");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, w, h);
+          for (const sample of (e.lightSamples || []).slice(0, 3)) {
+            const gx = sample.x * w,
+              gy = sample.y * h,
+              g = ctx.createRadialGradient(gx, gy, 0, gx, gy, w * 0.3),
+              rgb = sample.colour.map((part) => Math.round(part * 255));
+            g.addColorStop(0, `rgba(${rgb.join(",")},${Math.min(0.58, sample.power * 0.4)})`);
+            g.addColorStop(1, `rgba(${rgb.join(",")},0)`);
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, w, h);
+          }
           ctx.globalCompositeOperation = "source-over";
         }
       }
@@ -342,10 +367,6 @@
       mist.addColorStop(1, `rgba(105,135,165,${c.fogamount / 700})`);
       ctx.fillStyle = mist;
       ctx.fillRect(0, 0, w, h);
-      // Fallback receives a normal-colour bolt canvas from the event renderer.
-      ctx.globalCompositeOperation = "screen";
-      ctx.drawImage(bolts, 0, 0, w, h);
-      ctx.globalCompositeOperation = "source-over";
     }
   }
   S.Clouds = Clouds;

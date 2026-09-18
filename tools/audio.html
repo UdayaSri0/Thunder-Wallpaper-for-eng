@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Thunder audio QA</title>
+    <style>
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #08101c; color: #cad9e7; font: 15px Segoe UI, sans-serif; }
+      main { width: min(680px, calc(100vw - 48px)); padding: 32px; border: 1px solid #91abc42b; border-radius: 16px; background: #111d2b; }
+      button { margin: 6px; padding: 10px 14px; color: inherit; background: #25384c; border: 1px solid #8caac44a; border-radius: 6px; cursor: pointer; }
+      label { display: block; margin: 18px 6px; }
+      input { width: 100%; }
+      code { color: #9fc4e5; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Procedural thunder QA</h1>
+      <p>Development-only controls. Audio starts only after a button click. Headphones: begin at low volume.</p>
+      <label>Master volume <output id="value">30%</output><input id="volume" type="range" min="0" max="100" value="30" /></label>
+      <div>
+        <button data-depth="2" data-x="0.2" data-strength="1.1">Nearby left</button>
+        <button data-depth="1" data-x="0.5" data-strength="0.9">Medium centre</button>
+        <button data-depth="0" data-x="0.82" data-strength="0.7">Distant right</button>
+        <button id="double">Double thunder</button>
+        <button id="triple">Triple thunder</button>
+        <button id="stop">Stop all</button>
+      </div>
+      <p id="status">Ready. Thunder uses filtered procedural noise and low-frequency synthesis; no audio files are loaded.</p>
+    </main>
+    <script src="../js/config.js"></script>
+    <script src="../js/wallpaper-properties.js"></script>
+    <script src="../js/thunder-audio.js"></script>
+    <script>
+      Storm.applySettings({ thunderaudioenabled: true, thundervolume: 30, thundermindelay: 0, thundermaxdelay: 0.2 });
+      const audio = new Storm.ThunderAudio();
+      const volume = document.getElementById("volume");
+      const status = document.getElementById("status");
+      volume.addEventListener("input", () => {
+        Storm.applySettings({ thundervolume: Number(volume.value) });
+        document.getElementById("value").value = volume.value + "%";
+      });
+      const trigger = (depth, x, strength, delay = 0) => setTimeout(async () => {
+        await audio.unlock();
+        const scheduled = audio.preview(depth, x, strength);
+        status.textContent = scheduled === false ? "Audio unavailable, muted, or voice limit reached." : `Scheduled ${["distant", "medium", "nearby"][depth]} thunder.`;
+      }, delay);
+      for (const button of document.querySelectorAll("button[data-depth]"))
+        button.addEventListener("click", () => trigger(Number(button.dataset.depth), Number(button.dataset.x), Number(button.dataset.strength)));
+      document.getElementById("double").addEventListener("click", () => { trigger(1, 0.22, 0.9); trigger(2, 0.78, 1, 420); });
+      document.getElementById("triple").addEventListener("click", () => { trigger(0, 0.18, 0.7); trigger(2, 0.52, 1.05, 320); trigger(1, 0.82, 0.85, 920); });
+      document.getElementById("stop").addEventListener("click", () => { audio.silence(); status.textContent = "All pending and active thunder stopped."; });
+      window.ThunderAudioQA = audio;
+    </script>
+  </body>
+</html>
